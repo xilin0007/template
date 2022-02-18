@@ -4,6 +4,9 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.Properties;
 
 /**
@@ -19,15 +22,19 @@ public class Consts1 {
 	
 	static {
 		//获取环境变量的路径
-		String resource = System.getenv("WEBAPP_TEMPLATE_CONF");
-		resource = resource.replace("\\", "/");
+//		String resource = System.getenv("WEBAPP_TEMPLATE_CONF");
+//		resource = resource.replace("\\", "/");
 		try {
-			config.load(new FileInputStream(new File(resource + CONFIG_FILEPATH)));
+			URI uri = Thread.currentThread().getContextClassLoader().getResource(CONFIG_FILEPATH).toURI();
+//			config.load(new FileInputStream(new File(resource + CONFIG_FILEPATH)));
+			config.load(new FileInputStream(new File(uri)));
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (URISyntaxException e) {
 			e.printStackTrace();
 		}
 	}

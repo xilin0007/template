@@ -37,7 +37,8 @@ public class FastDFSClient {
 		ClientGlobal.setG_charset("UTF-8");
 		ClientGlobal.setG_secret_key(null);*/
 		try {
-			ClientGlobal.init(System.getenv("WEBAPP_TEMPLATE_CONF") + CONFIG_FILENAME);
+//			ClientGlobal.init(System.getenv("WEBAPP_TEMPLATE_CONF") + CONFIG_FILENAME);
+			ClientGlobal.init(Thread.currentThread().getContextClassLoader().getResource(CONFIG_FILENAME).toString());
 			TrackerClient trackerClient = new TrackerClient(ClientGlobal.g_tracker_group);
 			TrackerServer trackerServer = trackerClient.getConnection();
 			if (trackerServer == null) {

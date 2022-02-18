@@ -1,5 +1,6 @@
 package com.fxl.frame.util.encrypt;
 
+import com.alibaba.fastjson.JSONObject;
 import org.apache.commons.codec.binary.Base64;
 import sun.misc.BASE64Decoder;
 import sun.misc.BASE64Encoder;
@@ -24,11 +25,11 @@ public class AESEncryptUtils {
     /**
      * 加密用的 SecretKey
      */
-    private static String sKey = "ningyuan160Bazyy";
+    private static String sKeyDefault = "ningyuan160Bazyy";
     /**
      * 偏移量
      */
-    private static String ivParameter = "0102030405060708";
+    private static String ivParameterDefault = "0102030405060708";
     /**
      * 算法方式
      */
@@ -51,11 +52,15 @@ public class AESEncryptUtils {
      * @return java.lang.String
      */
     public static String encrypt(String plainText) {
+        return encrypt(plainText, sKeyDefault, ivParameterDefault);
+    }
+
+    public static String encrypt(String plainText, String sKey, String ivParameter) {
         // 密文字符串
         String cipherText = "";
         try {
             // 加密模式初始化参数
-            Cipher cipher = initParam(Cipher.ENCRYPT_MODE);
+            Cipher cipher = initParam(Cipher.ENCRYPT_MODE, sKey, ivParameter);
             // 获取加密内容的字节数组
             byte[] bytePlainText = plainText.getBytes("UTF-8");
             // 执行加密
@@ -66,6 +71,16 @@ public class AESEncryptUtils {
             throw new RuntimeException("encrypt fail!", e);
         }
         return cipherText;
+    }
+
+    public static String encrypt1(String sSrc, String sKey, String ivParameter) throws Exception {
+        Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+        byte[] raw = sKey.getBytes();
+        SecretKeySpec skeySpec = new SecretKeySpec(raw, "AES");
+        IvParameterSpec iv = new IvParameterSpec(ivParameter.getBytes());
+        cipher.init(Cipher.ENCRYPT_MODE, skeySpec, iv);
+        byte[] encrypted = cipher.doFinal(sSrc.getBytes("utf-8"));
+        return parseByte2HexStr(encrypted);
     }
 
     /**
@@ -136,6 +151,10 @@ public class AESEncryptUtils {
      * @return javax.crypto.Cipher
      */
     public static Cipher initParam(int mode) {
+        return initParam(mode, sKeyDefault, ivParameterDefault);
+    }
+
+    public static Cipher initParam(int mode, String sKey, String ivParameter) {
         Cipher cipher = null;
         try {
             //1.构造密钥生成器，指定为AES算法,不区分大小写
@@ -145,7 +164,7 @@ public class AESEncryptUtils {
             //2.根据ecnodeRules规则初始化密钥生成器
             //生成一个128位的随机源,根据传入的字节数组
             //kgen.init(128, new SecureRandom(key.getBytes()));
-            kgen.init(128, secureRandom);
+            kgen.init(PRIVATE_KEY_SIZE_BIT, secureRandom);
             //3.产生原始对称密钥
             SecretKey secretKey = kgen.generateKey();
             //4.获得原始对称密钥的字节数组
@@ -170,12 +189,25 @@ public class AESEncryptUtils {
 
 
 
-    public static void main(String[] args) {
-        String text = "{\"Input\":\"<Request><\\/Request>\"}";
-        String miwen = encrypt(text);
-        System.out.println("密文为：" + miwen);
-        String mingwen = decrypt(miwen);
-        System.out.println("明文为：" + mingwen);
+    public static void main(String[] args) throws Exception {
+//        String text = "{\"Input\":\"<Request><\\/Request>\"}";
+//        String miwen = encrypt(text);
+//        System.out.println("密文为：" + miwen);
+//        String mingwen = decrypt(miwen);
+//        System.out.println("明文为：" + mingwen);
+
+        JSONObject object = new JSONObject(3);
+        object.put("idCardNo", "440303196603071233");
+        object.put("phone", "18320995792");
+        object.put("patientName", "张三");
+        System.out.println("明文：" + object.toJSONString());
+
+        String sKey = "7A7C089A905B46F3";
+        String ivParameter = "7A7C089A905B46F3";
+        String encrypt = encrypt1(object.toJSONString(), sKey, ivParameter);
+        System.out.println("密文：" + encrypt);
+        String url = "https://zhfy.sdyunban.com/weixin/redirectWx?subHId=bcf9a49b87ff7591&hospitalId=100010&kdParam=" + encrypt;
+        System.out.println("url = " + url);
 
     }
 
