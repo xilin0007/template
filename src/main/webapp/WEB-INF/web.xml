@@ -55,6 +55,8 @@
 	</servlet>
 	<servlet-mapping>
 		<servlet-name>spring-mvc</servlet-name>
+		<!-- 比如访问 /testPath/demo/send 将会匹配转发到/demo/send -->
+		<url-pattern>/testPath/*</url-pattern>
 		<url-pattern>/</url-pattern>
 	</servlet-mapping>
 	
