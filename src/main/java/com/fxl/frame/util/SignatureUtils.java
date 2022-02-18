@@ -63,7 +63,7 @@ public class SignatureUtils {
 	 * @throws IOException
 	 */
 	public static String getSignature(Map<String,String> params) throws IOException	{
-	    // 先将参数以其参数名的字典序升序进行排序
+	    // 先将参数以其参数名的各个char的ASCII码值升序进行排序
 	    Map<String, String> sortedParams = new TreeMap<String, String>(params);
 	    Set<Entry<String, String>> entrys = sortedParams.entrySet();
 	 
