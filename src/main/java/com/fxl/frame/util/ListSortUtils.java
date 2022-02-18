@@ -8,7 +8,7 @@ import java.util.List;
  * List对象排序的通用方法 
  * @param <E> 
  */  
-public class ListSort<E> {  
+public class ListSortUtils<E> {
     /** 
      *  
      * @param list 要排序的集合 
