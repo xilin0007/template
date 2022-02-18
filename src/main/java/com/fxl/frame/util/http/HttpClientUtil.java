@@ -1,6 +1,8 @@
 package com.fxl.frame.util.http;
 
+import org.apache.commons.text.StringEscapeUtils;
 import org.apache.http.HttpEntity;
+import org.apache.http.HttpHost;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -58,7 +60,7 @@ public class HttpClientUtil {
 
     // HTTP内容类型。相当于form表单的形式，提交数据
     public static final String CONTENT_TYPE_JSON_URL = "application/json;charset=utf-8";
-    
+
     // 连接管理器
     private static PoolingHttpClientConnectionManager pool;
 
@@ -68,7 +70,7 @@ public class HttpClientUtil {
     private static CloseableHttpClient httpClient;
 
     static {
-        
+
         try {
             //System.out.println("初始化HttpClientTest~~~开始");
             KeyStore trustStore = KeyStore.getInstance(KeyStore.getDefaultType());
@@ -79,7 +81,8 @@ public class HttpClientUtil {
                     return true;
                 }
             };
-            SSLContext sslContext = SSLContexts.custom().useProtocol("TLS").loadTrustMaterial(trustStore, anyTrustStrategy).build();
+            //解决调用第三方API TLSv1.2版本接口时报错，解决jdk1.7https 请求默认是TLS1不支持TLS1.2的问题，解决报错 SSLException: Received fatal alert: internal_error
+            SSLContext sslContext = SSLContexts.custom().useProtocol("TLSv1.2").loadTrustMaterial(trustStore, anyTrustStrategy).build();
             LayeredConnectionSocketFactory sslsf = new SSLConnectionSocketFactory(sslContext, NoopHostnameVerifier.INSTANCE);
 
             /*SSLContextBuilder builder = new SSLContextBuilder();
@@ -96,21 +99,43 @@ public class HttpClientUtil {
             // 设置最大路由，服务每次能并行接收的请求数
             pool.setDefaultMaxPerRoute(50);
             // 根据默认超时限制初始化requestConfig
-            int socketTimeout = 10000;
-            int connectTimeout = 10000;
-            int connectionRequestTimeout = 10000;
+            int socketTimeout = 5000;
+            int connectTimeout = 5000;
+            int connectionRequestTimeout = 5000;
             // 设置请求超时时间
             requestConfig = RequestConfig.custom().setConnectionRequestTimeout(
                     connectionRequestTimeout).setSocketTimeout(socketTimeout).setConnectTimeout(
                     connectTimeout).build();
+            //设置重试机制
+//            ServiceUnavailableRetryStrategy retryStrategy = new ServiceUnavailableRetryStrategy() {
+//                @Override
+//                public boolean retryRequest(HttpResponse response, int executionCount, HttpContext context) {
+//                    System.out.println("----------------当前重试次数：" + executionCount + "，上一次请求响应结果：" + response); //response获取不到接口出参，只能获取到响应状态等
+//                    if (executionCount <= 1)
+//                        return true;
+//                    else
+//                        return false;
+//                }
+//
+//                @Override
+//                public long getRetryInterval() {
+//                    return 2000;
+//                }
+//            };
+            //默认的重试机制
+            DefaultHttpRequestRetryHandler defaultRetryStrategy = new DefaultHttpRequestRetryHandler(0, false);
+
             //http client初始化
             httpClient = HttpClients.custom()
                     // 设置连接池管理
                     .setConnectionManager(pool)
+                    //设置SSL，pool中设置了，可省略
+//                    .setSSLSocketFactory(sslsf)
                     // 设置请求配置
                     .setDefaultRequestConfig(requestConfig)
                     // 设置重试次数
-                    .setRetryHandler(new DefaultHttpRequestRetryHandler(0, false))
+                    .setRetryHandler(defaultRetryStrategy)
+//                    .setServiceUnavailableRetryStrategy(retryStrategy)
                     .build();
             //System.out.println("初始化HttpClientTest~~~结束");
         } catch (NoSuchAlgorithmException e) {
@@ -147,7 +172,7 @@ public class HttpClientUtil {
             HttpEntity entity = response.getEntity();
 	        //获取inputStream，可实现文件资源的下载功能
             //InputStream inputStream = entity.getContent();
-            
+
 
             // 可以获得响应头Response Header
             // Header[] headers = response.getHeaders(HttpHeaders.CONTENT_TYPE);
@@ -165,9 +190,9 @@ public class HttpClientUtil {
 
             if (HttpStatus.SC_OK == response.getStatusLine().getStatusCode()) {
                 responseContent = EntityUtils.toString(entity, CHARSET_UTF_8);
-                EntityUtils.consume(entity);
+                responseContent = StringEscapeUtils.unescapeXml(responseContent);
             }
-
+            EntityUtils.consume(entity);
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
@@ -218,6 +243,7 @@ public class HttpClientUtil {
 
             if (HttpStatus.SC_OK == response.getStatusLine().getStatusCode()) {
                 responseContent = EntityUtils.toString(entity, CHARSET_UTF_8);
+                responseContent = StringEscapeUtils.unescapeXml(responseContent);
                 EntityUtils.consume(entity);
             }
 
@@ -235,9 +261,9 @@ public class HttpClientUtil {
         }
         return responseContent;
     }
-    
-    
-    
+
+
+
     /**
      * 发送 post请求
      * @param httpUrl 地址
@@ -259,8 +285,36 @@ public class HttpClientUtil {
         HttpGet httpGet = new HttpGet(httpUrl);
         return sendHttpGet(httpGet);
     }
-    
-    
+
+    /**
+     * 发送 get请求（代理方式）
+     *
+     * org.apache.commons.httpclient.HttpClient设置代理的方式；
+     *      org.apache.commons.httpclient.HttpClient httpClient = new HttpClient();
+     * 		//设置代理访问
+     * 		org.apache.commons.httpclient.HostConfiguration hostConf = new HostConfiguration();
+     * 		hostConf.setProxy("242.91160.cn", 60057);
+     * 		httpClient.setHostConfiguration(hostConf);
+     *
+     * @param httpUrl 地址
+     */
+    public static String sendHttpGet(String httpUrl, String proxyHost, int proxyPort) {
+        // 创建get请求
+        HttpGet httpGet = new HttpGet(httpUrl);
+//        HttpHost httpHost = new HttpHost("242.91160.cn", 60057);
+        HttpHost httpHost = new HttpHost(proxyHost, proxyPort);
+        RequestConfig requestConfig = RequestConfig.custom()
+                .setConnectTimeout(10000)
+                .setSocketTimeout(10000)
+                .setProxy(httpHost)
+                .build();
+        httpGet.setConfig(requestConfig);
+        //设置Http报文头信息
+        httpGet.setHeader("User-Agent", "Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:50.0) Gecko/20100101 Firefox/50.0");
+        return sendHttpGet(httpGet);
+    }
+
+
 
     /**
      * 发送 post请求（带文件）
@@ -291,7 +345,7 @@ public class HttpClientUtil {
      * 发送 post请求
      * @param httpUrl 地址
      * @param params 参数(格式:key1=value1&key2=value2)
-     * 
+     *
      */
     public static String sendHttpPost(String httpUrl, String params) {
         HttpPost httpPost = new HttpPost(httpUrl);// 创建httpPost
@@ -317,14 +371,14 @@ public class HttpClientUtil {
         return sendHttpPost(httpUrl, parem);
     }
 
-    
-    
-    
+
+
+
     /**
      * 发送 post请求 发送json数据
      * @param httpUrl 地址
      * @param paramsJson 参数(格式 json)
-     * 
+     *
      */
     public static String sendHttpPostJson(String httpUrl, String paramsJson) {
         HttpPost httpPost = new HttpPost(httpUrl);// 创建httpPost
@@ -340,12 +394,12 @@ public class HttpClientUtil {
         }
         return sendHttpPost(httpPost);
     }
-    
+
     /**
      * 发送 post请求 发送xml数据
      * @param httpUrl   地址
      * @param paramsXml  参数(格式 Xml)
-     * 
+     *
      */
     public static String sendHttpPostXml(String httpUrl, String paramsXml) {
         HttpPost httpPost = new HttpPost(httpUrl);// 创建httpPost
@@ -361,7 +415,37 @@ public class HttpClientUtil {
         }
         return sendHttpPost(httpPost);
     }
-    
+
+    /**
+     * 发送 post请求 发送xml数据（代理方式）
+     * @param httpUrl   地址
+     * @param paramsXml  参数(格式 Xml)
+     *
+     */
+    public static String sendHttpPostXml(String httpUrl, String paramsXml, String proxyHost, int proxyPort) {
+        HttpPost httpPost = new HttpPost(httpUrl);// 创建httpPost
+        HttpHost httpHost = new HttpHost(proxyHost, proxyPort);
+        RequestConfig requestConfig = RequestConfig.custom()
+                .setConnectTimeout(10000)
+                .setSocketTimeout(10000)
+                .setProxy(httpHost)
+                .build();
+        httpPost.setConfig(requestConfig);
+        //设置Http报文头信息
+        httpPost.setHeader("User-Agent", "Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:50.0) Gecko/20100101 Firefox/50.0");
+        try {
+            // 设置参数
+            if (paramsXml != null && paramsXml.trim().length() > 0) {
+                StringEntity stringEntity = new StringEntity(paramsXml, "UTF-8");
+                stringEntity.setContentType(CONTENT_TYPE_TEXT_HTML);
+                httpPost.setEntity(stringEntity);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return sendHttpPost(httpPost);
+    }
+
 
     /**
      * 将map集合的键值对转化成：key1=value1&key2=value2 的形式
@@ -385,7 +469,7 @@ public class HttpClientUtil {
 
 
     public static void main(String[] args) throws Exception {
-        
+
         //System.out.println(sendHttpGet("http://www.baidu.com"));
     	//String httpUrl = "http://192.168.0.2:8080/nutritionV2/user/findUserByUserId;jsessionid=A8E1B5509812A6B7C32F9AA9EE31FBF0";
     	/*String httpUrl = "http://192.168.0.2:8080/nutritionV2/user/findUserByUserId";
@@ -395,8 +479,46 @@ public class HttpClientUtil {
     	System.out.println(sendHttpPost(httpUrl, maps));*/
 
         //String url = "http://report.91160.com/report";
-        String url = "https://218.17.222.229/com/installClient.html";
-        String str = sendHttpGet(url);
-        System.out.println(str);
+//        String url = "https://wxis.91160.com/hdeps/servlet";
+//        Map<String, Object> maps = new HashMap<>();
+//        maps.put("param", "serviceId{=}pay_checkAccount{,}dataPackType{=}4{,}dataDesZip{=}00{,}userId{=}111{,}password{=}AE13384C53777290C135546992B092CE");
+//        maps.put("data", "<request><head><key>check_account</key><hospcode>22</hospcode><token></token><time></time></head><body><unit_id>22</unit_id><pay_method>weixin</pay_method><bill_dateBegin>2021-05-07</bill_dateBegin><bill_dateEnd>2021-05-07</bill_dateEnd><unitBusinessId>inHospital</unitBusinessId></body></request>");
+//        String str = sendHttpPost(url, maps);
+//        System.out.println(str);
+
+        String url = "http://121.12.165.76:9182/webservices/hisApiWebService?wsdl";
+//        String resp = sendHttpGet(url, "242.91160.cn", 60057);
+        String params = "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:ser=\"http://service.ky.com\">\n" +
+                "   <soapenv:Header/>\n" +
+                "   <soapenv:Body>\n" +
+                "  <ser:hisESB_submitExamApptOrder>\n" +
+                "         <xmlString>\n" +
+                "         <![CDATA[\n" +
+                "\n" +
+                "     <request>\n" +
+                "    <head>\n" +
+                "        <key>hisESB_submitExamApptOrder</key>\n" +
+                "        <hospcode>263</hospcode>\n" +
+                "        <token></token>\n" +
+                "        <time></time>\n" +
+                "    </head>\n" +
+                "    <body>\n" +
+                "        <orderNo>14p5aa989</orderNo>\n" +
+                "        <cardNo>A000001321</cardNo>\n" +
+                "        <orgName>康华医院</orgName>\n" +
+                "        <orgCode>263</orgCode>\n" +
+                "        <examineDate>2021-09-09</examineDate>\n" +
+                "        <bodyTemperature>36</bodyTemperature>\n" +
+                "        <mzType>1</mzType>\n" +
+                "    </body>\n" +
+                "</request>\n" +
+                " \n" +
+                "         ]]>\n" +
+                "         </xmlString>\n" +
+                "      </ser:hisESB_submitExamApptOrder>\n" +
+                "   </soapenv:Body>\n" +
+                "</soapenv:Envelope>";
+        String resp = sendHttpPostXml(url, params, "242.91160.cn", 60057);
+        System.out.println("resp = " + resp);
     }
 }
