@@ -1,0 +1,28 @@
+
+jdk8新特性
+    1、Lambda表达式
+    2、stream流
+    3、新日期时间类
+    4、Collections List和Map新增了方法
+        Collection	removeIf() spliterator() stream() parallelStream() forEach()
+        List	    replaceAll() sort()
+        Map	        getOrDefault() forEach() replaceAll() putIfAbsent() remove() replace() computeIfAbsent() computeIfPresent() compute() merge()
+    5、stream()和parallelStream()和spliterator()
+
+
+stream 接口方法：
+    中间操作	concat() distinct() filter() flatMap() limit() map() peek()
+    skip() sorted() parallel() sequential() unordered()
+    结束操作	allMatch() anyMatch() collect() count() findAny() findFirst()
+    forEach() forEachOrdered() max() min() noneMatch() reduce() toArray()
+
+
+方法引用：
+    通过类名或者实例名与方法名的组合来直接访问到类或者实例已经存在的方法或者构造方法。方法引用使用**::来定义，::**的前半部分表示类名或者实例名，后半部分表示方法名，如果是构造方法就使用NEW来表示
+
+编译器的新特性
+    1、参数名
+    Java字节码中保存方法的参数名，例如void run(String strPar)，编译后，通过反射方法获取到的parameter name是strPar
+
+Java运行时 (JVM)的新特性
+    JVM移除了PermGen空间，取而代之的是Metaspace（JEP 122）。相应的，JVM参数-XX：PermSize和-XX：MaxPermSize已被替换为-XX：MetaSpaceSize和-XX： MaxMetaspaceSize
