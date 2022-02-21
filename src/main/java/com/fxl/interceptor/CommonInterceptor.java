@@ -7,7 +7,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.HandlerInterceptor;
@@ -25,11 +26,17 @@ import com.fxl.template.user.service.UserInfoService;
  */
 public class CommonInterceptor implements HandlerInterceptor {
 	
-	private final static Logger logger = Logger.getLogger(CommonInterceptor.class);
+	private final static Logger logger = LoggerFactory.getLogger(CommonInterceptor.class);
 	
 	@Autowired
 	private UserInfoService userInfoService;
-	
+
+	/**
+	 * ThreadLocal用法测试
+	 */
+	private static ThreadLocal<String> limitFlag = new ThreadLocal<String>();
+
+
 	/**
      * 该方法在目标方法之前被调用.
      * 若返回值为 true, 则继续调用后续的拦截器和目标方法. 
@@ -67,6 +74,11 @@ public class CommonInterceptor implements HandlerInterceptor {
             String body = new String(bytes, "UTF-8");
             logger.info("body参数==>" + body);
         }
+
+		String preValue = limitFlag.get();
+        logger.info("preHandle，ThreadLocal设置之前的值：{}", preValue);
+		String threadName = Thread.currentThread().getName();
+		limitFlag.set(threadName);
 		return true;
 	}
 	
@@ -95,5 +107,9 @@ public class CommonInterceptor implements HandlerInterceptor {
 	    	logger.info("header日志对象内容：" + content);
 	    	//可进行数据库日志的录入
 		}
+
+		String afterValue = limitFlag.get();
+		logger.info("afterCompletion，ThreadLocal设置之后的值：{}", afterValue);
+		limitFlag.remove();
 	}
 }
