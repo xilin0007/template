@@ -27,11 +27,11 @@
 	<bean id="propertyConfigurer" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
 		<property name="locations">
 			<list>
-				<!-- <value>classpath:conf/jdbc.properties</value>
-				<value>classpath:conf/spring-config.properties</value> -->
+				<value>classpath:conf/jdbc.properties</value>
+				<value>classpath:conf/spring-config.properties</value>
 				<!-- 推荐使用file的方式引入，这样可以将配置和代码分离 -->  
-              	<value>file:${WEBAPP_TEMPLATE_CONF}/conf/jdbc.properties</value>
-              	<value>file:${WEBAPP_TEMPLATE_CONF}/conf/spring-config.properties</value>
+              	<!--<value>file:${WEBAPP_TEMPLATE_CONF}/conf/jdbc.properties</value>
+              	<value>file:${WEBAPP_TEMPLATE_CONF}/conf/spring-config.properties</value>-->
 			</list>
 		</property>
 	</bean>
