@@ -2,6 +2,8 @@ package com.fxl.template.user.entity;
 
 import java.util.Date;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fxl.frame.base.BaseEntity;
 
 public class UserInfo extends BaseEntity {
@@ -22,10 +24,18 @@ public class UserInfo extends BaseEntity {
 
     private String userImg;
 
+    /**
+     * JsonFormat 返回给前端时，日期自动转换成格式化的字符串，也可通过spring-mvc配置文件配置全局的格式化
+     */
+    @JsonFormat(locale = "zh", timezone = "GMT+8", pattern = "yyyy-MM-dd HH:mm:ss")
     private Date expectedDateOfConfinement;
 
     private Integer status;
 
+    /**
+     * JsonIgnore 设置后，此字段将忽略，不会返回到前端
+     */
+    @JsonIgnore
     private Date regTime;
 
     private String password;
@@ -218,20 +228,25 @@ public class UserInfo extends BaseEntity {
         this.medicalNum = medicalNum == null ? null : medicalNum.trim();
     }
 
+//	@Override
+//	public String toString() {
+//		return "UserInfo [mobile=" + mobile + ", email=" + email
+//				+ ", nickName=" + nickName + ", country=" + country
+//				+ ", province=" + province + ", city=" + city + ", userImg="
+//				+ userImg + ", expectedDateOfConfinement="
+//				+ expectedDateOfConfinement + ", status=" + status
+//				+ ", regTime=" + regTime + ", password=" + password
+//				+ ", isSwitchPushMsg=" + isSwitchPushMsg + ", openId=" + openId
+//				+ ", userType=" + userType + ", gold=" + gold
+//				+ ", pregnantStage=" + pregnantStage + ", pregnantWeek="
+//				+ pregnantWeek + ", sinaOpenId=" + sinaOpenId + ", qqOpenId="
+//				+ qqOpenId + ", weixinOpenId=" + weixinOpenId + ", medicalNum="
+//				+ medicalNum + "]";
+//	}
+
 	@Override
 	public String toString() {
-		return "UserInfo [mobile=" + mobile + ", email=" + email
-				+ ", nickName=" + nickName + ", country=" + country
-				+ ", province=" + province + ", city=" + city + ", userImg="
-				+ userImg + ", expectedDateOfConfinement="
-				+ expectedDateOfConfinement + ", status=" + status
-				+ ", regTime=" + regTime + ", password=" + password
-				+ ", isSwitchPushMsg=" + isSwitchPushMsg + ", openId=" + openId
-				+ ", userType=" + userType + ", gold=" + gold
-				+ ", pregnantStage=" + pregnantStage + ", pregnantWeek="
-				+ pregnantWeek + ", sinaOpenId=" + sinaOpenId + ", qqOpenId="
-				+ qqOpenId + ", weixinOpenId=" + weixinOpenId + ", medicalNum="
-				+ medicalNum + "]";
+		return "UserInfo [nickName=" + nickName + ", status=" + status  + "]";
 	}
     
 }

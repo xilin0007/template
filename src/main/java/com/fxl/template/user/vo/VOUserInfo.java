@@ -1,6 +1,14 @@
 package com.fxl.template.user.vo;
 
+import lombok.Data;
+import lombok.experimental.Accessors;
 
+/**
+ * Data，设置后将字段生成set、get、toString等方法
+ * Accessors，设置后，set方法将改为build模式，非void模式
+ */
+@Data
+@Accessors(chain = true)
 public class VOUserInfo {
 	private Integer id;
 	
@@ -20,36 +28,4 @@ public class VOUserInfo {
 		this.id = id;
 	}
 
-	public String getNick_name() {
-		return nick_name;
-	}
-
-	public void setNick_name(String nick_name) {
-		this.nick_name = nick_name;
-	}
-
-	public String getUser_img() {
-		return user_img;
-	}
-
-	public void setUser_img(String user_img) {
-		this.user_img = user_img;
-	}
-
-	public Integer getPregnant_stage() {
-		return pregnant_stage;
-	}
-
-	public void setPregnant_stage(Integer pregnant_stage) {
-		this.pregnant_stage = pregnant_stage;
-	}
-
-	public Integer getPregnant_week() {
-		return pregnant_week;
-	}
-
-	public void setPregnant_week(Integer pregnant_week) {
-		this.pregnant_week = pregnant_week;
-	}
-    
 }

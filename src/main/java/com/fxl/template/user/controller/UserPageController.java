@@ -51,7 +51,7 @@ public class UserPageController extends BaseController {
 	private PinyinChineseService pinyinChineseService;
 	
 	@RequestMapping("/demo")
-	public String demo() {
+	public String demo(HttpServletRequest request) {
 		//测试设置session
 		HttpSession session = getRequest().getSession();
 		session.setAttribute("baseUrl", Consts.BASE_URL);
