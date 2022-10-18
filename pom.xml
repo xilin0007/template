@@ -18,7 +18,7 @@
 		<spring.version>4.3.18.RELEASE</spring.version>
 		<junit.version>4.12</junit.version>
 		<swagger.version>2.2.2</swagger.version>
-		<jackson.version>2.9.8</jackson.version>
+		<jackson.version>2.13.4.1</jackson.version>
 	</properties>
 	
 	<dependencies>
